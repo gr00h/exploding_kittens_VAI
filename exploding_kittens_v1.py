@@ -193,6 +193,7 @@ class Actions:
             # call draw_card function on opposing player
             subject2.draw_card(whole_deck)
 
+            self.must_draw = False
             ####### being_attacked(subject2,deck)
 
             # find index of played Attack card
@@ -204,7 +205,7 @@ class Actions:
         else:
             print("You cannot attack.")
     
-    # function representing playing a SKIP card         NOT YET
+    # function representing playing a SKIP card         FUNGUJE
     def card_skip(self):
         if self.can_skip == True:
             self.must_draw = False
@@ -472,13 +473,58 @@ class GameFlow:
 
     # moznosti hrace
     def player_turn(self):
+        self.player.must_draw = True
+        # show player his hand to let him choose a card to play
         self.player.reveal_hand()
-        print("What card do you I want to play?")
-        self.player.desired_card=input("Write name of card: ")
-        if self.player.desired_card == "Attack":
-            self.player.card_attack(self.AI,whole_deck)
-            if self.player.can_attack == False:
-                self.player.desired_card=input("Please select another card: ")
+        self.player.wanna_play = input("Do you want to play a card? [y/n]: ")
+
+        if self.player.wanna_play == "y":
+
+            print("What card do you I want to play? \nNote, that only action cards can currently be played (cards which do NOT start with 'nAC')")
+            self.card_was_played = False
+
+            while(self.card_was_played == False):
+                self.player.desired_card=input("Write name of card: ")
+                
+                # check what was written and possibly execute card
+                if self.player.desired_card == "Attack":
+                    self.player.card_attack(self.AI,whole_deck)
+                    if self.player.can_attack == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Favor":
+                    self.player.card_favor(self.AI)
+                    if self.player.can_favor == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Shuffle":
+                    self.player.card_shuffle(whole_deck)
+                    if self.player.can_shuffle == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Skip":
+                    self.player.card_skip()
+                    if self.player.can_skip == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                else:
+                    print("Invalid card.")
+        
+        # konec tahu - tj pokud se nezmeni podminka tak musi tahnout
+        if self.player.must_draw == True:
+            self.player.draw_card(whole_deck)
+
+
+        
+
 
 
 
@@ -496,9 +542,6 @@ class GameFlow:
             self.current_player = self.AI
         elif self.current_player == self.AI:
             self.current_player = self.player
-
-
-
 
 
 
