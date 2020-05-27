@@ -1,5 +1,7 @@
 import random
 
+
+
 whole_deck = [ 
     "Attack","Attack","Attack","Attack","Attack",
     "Skip","Skip","Skip","Skip","Skip",
@@ -50,11 +52,13 @@ Sk_val = 10
 discard_pile = []
 
 # function, which takes card from deck and gives it to selected player
+
+'''
 def draw_card(subject,deck):
     card = deck[0]
     subject.append(card)
     del deck[0]
-
+'''
 
 class Actions:
     '''Possible actions of a subject, according to one's hand'''
@@ -187,8 +191,9 @@ class Actions:
         if self.can_attack == True:
             print("You attack!")
             # call draw_card function on opposing player
-            draw_card(subject2,whole_deck)
+            subject2.draw_card(whole_deck)
 
+            self.must_draw = False
             ####### being_attacked(subject2,deck)
 
             # find index of played Attack card
@@ -200,7 +205,7 @@ class Actions:
         else:
             print("You cannot attack.")
     
-    # function representing playing a SKIP card         NOT YET
+    # function representing playing a SKIP card         FUNGUJE
     def card_skip(self):
         if self.can_skip == True:
             self.must_draw = False
@@ -454,16 +459,108 @@ class Actions:
 
         self.value_of_enemy = min(list_enemy_vals)
 
+
+class GameFlow:
+
+    # init players of game
+    def __init__(self):
+        self.round = 0
+
+        self.player = Actions("PlayerOne",hand_player)
+        self.AI = Actions("AI",hand_AI)
+
+        self.current_player = self.player.subject
+
+    # moznosti hrace
+    def player_turn(self):
+        self.player.must_draw = True
+        # show player his hand to let him choose a card to play
+        self.player.reveal_hand()
+        self.player.wanna_play = input("Do you want to play a card? [y/n]: ")
+
+        if self.player.wanna_play == "y":
+
+            print("What card do you I want to play? \nNote, that only action cards can currently be played (cards which do NOT start with 'nAC')")
+            self.card_was_played = False
+
+            while(self.card_was_played == False):
+                self.player.desired_card=input("Write name of card: ")
+                
+                # check what was written and possibly execute card
+                if self.player.desired_card == "Attack":
+                    self.player.card_attack(self.AI,whole_deck)
+                    if self.player.can_attack == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Favor":
+                    self.player.card_favor(self.AI)
+                    if self.player.can_favor == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Shuffle":
+                    self.player.card_shuffle(whole_deck)
+                    if self.player.can_shuffle == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                elif self.player.desired_card == "Skip":
+                    self.player.card_skip()
+                    if self.player.can_skip == False:
+                        self.player.desired_card=input("Please select another card: ")
+                    else:
+                        self.card_was_played = True
+
+                else:
+                    print("Invalid card.")
+        
+        # konec tahu - tj pokud se nezmeni podminka tak musi tahnout
+        if self.player.must_draw == True:
+            self.player.draw_card(whole_deck)
+
+
+        
+
+
+
+
+    def turn(self):
+        # subject 1 == player, subject 2 == AI
+        self.round = self.round + 1
+        print(f"Round: {self.round}")
+        print(f"It's {self.current_player}'s turn")
+
+        # tady odpalit funcki hrani hrace anebo AI
+        self.player_turn()
+
+        # end turn
+        if self.current_player == self.player:
+            self.current_player = self.AI
+        elif self.current_player == self.AI:
+            self.current_player = self.player
+
+
+
+
+
+
 PlayerOne = Actions("PlayerOne",hand_player)
 #PlayerOne.reveal_hand()
 PlayerTwo = Actions("AI",hand_AI)
 #PlayerTwo.reveal_hand()
 
 '''
+
+# TEST PROBABILITIES
+
 PlayerOne.draw_probabilities_with_favor(PlayerTwo, whole_deck)
 print("Total of chances:",(PlayerOne.draw_prob_defuse + PlayerOne.draw_prob_EK + PlayerOne.draw_prob_attack_w_Favor + PlayerOne.draw_prob_skip_w_Favor + PlayerOne.draw_prob_shuffle_w_Favor + PlayerOne.draw_prob_favor_w_Favor + PlayerOne.draw_prob_nAC_w_Favor))
 print("Chances of drawing D, EK, Att, SK, Sh, F, nAC for P1 are\n",(PlayerOne.draw_prob_defuse,PlayerOne.draw_prob_EK,PlayerOne.draw_prob_attack_w_Favor,PlayerOne.draw_prob_skip_w_Favor,PlayerOne.draw_prob_shuffle_w_Favor,PlayerOne.draw_prob_favor_w_Favor, PlayerOne.draw_prob_nAC_w_Favor))
-'''
+
 
 PlayerOne.draw_probabilities(PlayerTwo,whole_deck)
 PlayerOne.draw_probabilities_with_favor(PlayerTwo,whole_deck)
@@ -477,9 +574,18 @@ PlayerOne.eval_enemy(PlayerTwo)
 
 print("Evaluation of my possibilities:",PlayerOne.value_of_draw, PlayerOne.value_of_draw_w_Favor, PlayerOne.value_of_shuffle_draw,"Enemy move:", PlayerOne.value_of_enemy)
 print("Evaluation of enemy possibilities:",PlayerTwo.value_of_draw,PlayerTwo.value_of_draw_w_Favor,PlayerTwo.value_of_shuffle_draw)
+'''
 
+Gametest = GameFlow()
+Gametest.turn()
+
+PlayerOne.reveal_hand()
+PlayerTwo.reveal_hand()
 
 '''
+
+# TEST OF DRAWING CARDS
+
 i = 0
 while len(whole_deck) > 0:
     PlayerOne.draw_card(whole_deck)
