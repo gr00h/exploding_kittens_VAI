@@ -44,7 +44,7 @@ Defuse_val = 15
 nAC_val = 5
 Favor_val = 10
 Shuffle_val = 2
-Att_val = 10
+Att_val = 12
 Sk_val = 10
 
 
@@ -250,6 +250,19 @@ class Actions:
         else:
             print("You cannot ask for a card.")
 
+    # check whether I can defend myself
+    def can_counter_attack(self):
+        self.rewrite_possibilities()
+        if self.can_attack == True:
+            self.can_counter_attack = True
+        else:
+            self.can_counter_attack = False
+
+    # calculate probability of enemy defending himself with countering attack card
+    def enemy_can_counter_attack(self,subject2):
+        # chance of enemy having an attack card == possibility of random card being attack * number of cards in his hand
+        self.enemy_has_att_prob = len(subject2.hand) * self.draw_prob_attack
+
 
     enemy_defuse = 1
     def enemy_defuse_check(self,subject2):
@@ -406,6 +419,7 @@ class Actions:
         subject2.draw_prob_nAC_w_Favor = ((20 - nac_in_hand - nac_in_disc) / (len(deck) + len(self.hand) - self.enemy_defuse)) + (nac_in_hand / len(self.hand))
 
     # creates variables, which represent subjective value (probability * value) of drawing different cards from deck
+    # function called in eval_probabilities
     def eval_draw(self):
         # creates variables, which represent subjective value (probability * value) of drawing different cards from deck
         self.expl_kitten_value = Exploding_kitten_val * self.draw_prob_EK
@@ -415,7 +429,12 @@ class Actions:
         self.nAC_value = nAC_val * self.draw_prob_nAC
         self.attack_value = Att_val * self.draw_prob_attack
 
+        # total value of draw
+        self.value_of_draw = self.expl_kitten_value + self.skip_value + self.shuffle_value + self.favor_value + self.nAC_value + self.attack_value
+
+
     # creates variables, which represent subjective value (probability * value) of drawing different cards from deck and with favor
+    # function called in eval_probabilities
     def eval_draw_favor(self):
         self.expl_kitten_value_f = Exploding_kitten_val * self.draw_prob_EK
         self.skip_value_f = Sk_val * self.draw_prob_skip_w_Favor
@@ -424,16 +443,39 @@ class Actions:
         self.nAC_value_f = nAC_val * self.draw_prob_nAC_w_Favor
         self.attack_value_f = Att_val * self.draw_prob_attack_w_Favor
         self.defuse_value = Defuse_val * self.draw_prob_defuse
-    
 
-    def eval_probabilities(self):
+        self.value_of_draw_w_Favor = self.expl_kitten_value_f + self.skip_value_f + self.shuffle_value_f + self.favor_value_f + self.nAC_value_f + self.attack_value_f + self.defuse_value
+
+
+    # evaluate, whether its good to attack
+    def eval_attack(self,subject2):
+        self.eval_draw()
+        if self.value_of_draw < 5 and self.can_attack = True:
+            self.enemy_can_counter_attack(subject2)
+            if self.enemy_has_att_prob < 0.5:
+                self.should_I_attack = True
+            else:
+                self.should_I_attack = False
+        else:
+            self.should_I_attack = False
+            
+
+    def eval_probabilities(self,subject2):
         self.eval_draw()
         self.eval_draw_favor()
+        self.eval_enemy(subject2)
+        self.eval_attack(subject2)
 
-        self.value_of_draw = self.expl_kitten_value + self.skip_value + self.shuffle_value + self.favor_value + self.nAC_value + self.attack_value
-        self.value_of_draw_w_Favor = self.expl_kitten_value_f + self.skip_value_f + self.shuffle_value_f + self.favor_value_f + self.nAC_value_f + self.attack_value_f + self.defuse_value
+
+        # these values are already calculated in functions called above
+        # self.value_of_draw = self.expl_kitten_value + self.skip_value + self.shuffle_value + self.favor_value + self.nAC_value + self.attack_value
+        # self.value_of_draw_w_Favor = self.expl_kitten_value_f + self.skip_value_f + self.shuffle_value_f + self.favor_value_f + self.nAC_value_f + self.attack_value_f + self.defuse_value
         self.value_of_shuffle_draw = self.value_of_draw
-        # later add value of attack, skip.. or maybe just keep values of draw + whatever and add separate function of attacking and so
+        
+        # skip == enemy can play whatever they want
+        self.value_of_skip = self.value_of_enemy
+        # enemy has to draw a card unless has counter attack
+        self.value_of_attack = 
 
     # evaluates different cards enemy can draw with favor from deck and me based on probability and card value
     def eval_draw_favor_enemy(self,subject2):
@@ -449,9 +491,10 @@ class Actions:
     # values of different actions enemy can take, put into list, final value of his turn is min of said list
     def eval_enemy(self,subject2):
 
+        # hodnota draw pro enemy == hodn. draw pro me samotneho; hodnota draw+favor je jina
         subject2.eval_draw_favor_enemy(subject2)
-
         subject2.value_of_draw = self.value_of_draw
+        # kombo DRAW + card
         subject2.value_of_draw_w_Favor = subject2.expl_kitten_value_f + subject2.skip_value_f + subject2.shuffle_value_f + subject2.favor_value_f + subject2.nAC_value_f + subject2.attack_value_f + subject2.defuse_value
         subject2.value_of_shuffle_draw = subject2.value_of_draw
 
@@ -522,11 +565,14 @@ class GameFlow:
         if self.player.must_draw == True:
             self.player.draw_card(whole_deck)
 
+    # moznosti / algoritmus AI
+    def AI_turn(self):
+        self.AI.must_draw = True
+
+
+
 
         
-
-
-
 
     def turn(self):
         # subject 1 == player, subject 2 == AI
