@@ -40,10 +40,10 @@ random.shuffle(whole_deck)
 
 # values of cards
 Exploding_kitten_val = -20
-Defuse_val = 15
+Defuse_val = 20
 nAC_val = 5
 Favor_val = 10
-Shuffle_val = 2
+Shuffle_val = 5
 Att_val = 12
 Sk_val = 10
 
@@ -254,9 +254,9 @@ class Actions:
     def can_counter_attack(self):
         self.rewrite_possibilities()
         if self.can_attack == True:
-            self.can_counter_attack = True
+            self.I_can_counter_attack = True
         else:
-            self.can_counter_attack = False
+            self.I_can_counter_attack = False
 
     # calculate probability of enemy defending himself with countering attack card
     def enemy_can_counter_attack(self,subject2):
@@ -450,14 +450,19 @@ class Actions:
     # evaluate, whether its good to attack
     def eval_attack(self,subject2):
         self.eval_draw()
-        if self.value_of_draw < 5 and self.can_attack = True:
+        if self.value_of_draw < 5 and self.can_attack == True:
             self.enemy_can_counter_attack(subject2)
             if self.enemy_has_att_prob < 0.5:
                 self.should_I_attack = True
+                # increase the value of attack if oponent is probably defenseless
+                self.value_of_attack = self.value_of_draw + 10
             else:
                 self.should_I_attack = False
+                # decrease if enemy is not defenseless
+                self.value_of_attack = self.value_of_draw - 10
         else:
             self.should_I_attack = False
+            self.value_of_attack = self.value_of_draw - 10
             
 
     def eval_probabilities(self,subject2):
@@ -474,8 +479,6 @@ class Actions:
         
         # skip == enemy can play whatever they want
         self.value_of_skip = self.value_of_enemy
-        # enemy has to draw a card unless has counter attack
-        self.value_of_attack = 
 
     # evaluates different cards enemy can draw with favor from deck and me based on probability and card value
     def eval_draw_favor_enemy(self,subject2):
@@ -501,6 +504,7 @@ class Actions:
         list_enemy_vals = [subject2.value_of_draw, subject2.value_of_draw_w_Favor, subject2.value_of_shuffle_draw]
 
         self.value_of_enemy = min(list_enemy_vals)
+        
 
 
 class GameFlow:
@@ -568,6 +572,7 @@ class GameFlow:
     # moznosti / algoritmus AI
     def AI_turn(self):
         self.AI.must_draw = True
+
 
 
 
