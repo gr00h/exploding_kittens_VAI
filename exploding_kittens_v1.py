@@ -42,8 +42,8 @@ Defuse_val = 20
 nAC_val = 5
 Favor_val = 15
 Shuffle_val = 8
-Att_val = 12
-Sk_val = 10
+Att_val = 13
+Sk_val = 11
 
 
 # init discard pile
@@ -199,6 +199,18 @@ class Actions:
             print("You attack!")
             # call draw_card function on opposing player ----- REEEwrtite this to incorporate DEFENSIVE TACTICS
             subject2.draw_card(whole_deck)
+            
+            # subject2.can_counter_attack()
+
+            # TODO implemetation of counterattacking ---- need to add checking whether i am being attacked 
+            # if subject2.can_counter_attack == True:
+            #     subject2.wanna_counter_attack = input("Do you want to counter attack? [y/n]: ")
+            #     if subject2.wanna_counter_attack == True:
+            #         subject2.card_attack(self,whole_deck)
+            #     else:
+            #         subject2.draw_card(whole_deck)
+            # else:
+            #     subject2.draw_card(whole_deck)
 
             self.must_draw = False
             ####### being_attacked(subject2,deck)
@@ -484,21 +496,33 @@ class Actions:
     # evaluate, whether its good to attack
     def eval_attack(self,subject2,deck):
         self.eval_draw(subject2,whole_deck)
+
+        # TODO ----- IMPLEMENTATION OF COUNTER ATTACKING 
         # if self.value_of_draw < 5 and self.can_attack == True:
-        if self.draw_prob_EK > 0.25 and self.can_attack == True:
-            self.enemy_can_counter_attack(subject2,deck)
-            if self.enemy_intel.enemy_has_att_prob < 0.5:
-                self.should_I_attack = True
-                # increase the value of attack if oponent is probably defenseless
-                self.value_of_attack = self.value_of_draw + 10
-            else:
-                self.should_I_attack = False
-                # decrease if enemy is not defenseless
-                self.value_of_attack = self.value_of_draw - 10
+        # if self.draw_prob_EK > 0.01 and self.can_attack == True:
+        #     self.enemy_can_counter_attack(subject2,deck)
+        #     if self.enemy_intel.enemy_has_att_prob < 0.5:
+        #         self.should_I_attack = True
+        #         # increase the value of attack if oponent is probably defenseless
+        #         self.value_of_attack = self.value_of_draw + 10
+        #     else:
+        #         self.should_I_attack = False
+        #         # decrease if enemy is not defenseless
+        #         self.value_of_attack = self.value_of_draw - 5
+        # else:
+        #     self.should_I_attack = False
+        #     self.value_of_attack = self.value_of_draw - 10
+            
+        # TEMPORAL VERSION OF ATTACK UNTIL COUNTERING ATTACKS WORKS 
+        if self.draw_prob_EK > 0.1 and self.can_attack == True:
+            self.should_I_attack = True
+            # increase the value of attack if oponent is probably defenseless
+            self.value_of_attack = self.value_of_draw + 10
         else:
             self.should_I_attack = False
-            self.value_of_attack = self.value_of_draw - 10
-            
+            # decrease if enemy is not defenseless
+            self.value_of_attack = self.value_of_draw - 5
+        
     # evaluate possibilities: draw, draw with favor, play attack, shuffle and draw, skip and enemy options
     def eval_options(self,subject2,deck):
         
@@ -519,7 +543,7 @@ class Actions:
         self.value_of_skip = self.enemy_intel.value_of_enemy
 
         # write to console current values of possible actions
-        print(self.value_of_draw, self.value_of_draw_w_Favor, self.value_of_shuffle_draw, self.value_of_skip, self.value_of_attack, self.enemy_intel.value_of_enemy)
+        # print(self.value_of_draw, self.value_of_draw_w_Favor, self.value_of_shuffle_draw, self.value_of_skip, self.value_of_attack, self.enemy_intel.value_of_enemy)
 
         # create list of possible actions and their values ----- POSSIBLY ADD MORE ACTIONS (MORE CARDS? MORE MOVES?)
         self.list_options = [self.value_of_draw, self.value_of_draw_w_Favor, self.value_of_shuffle_draw, self.value_of_skip, self.value_of_attack, self.enemy_intel.value_of_enemy]
@@ -638,7 +662,7 @@ class GameFlow:
             # self.AI.best_action = max(self.AI.list_options)
             # print(self.AI.best_action)
             self.AI.best_action_index = self.AI.list_options.index(max(self.AI.list_options))
-            print("Index of best action:",self.AI.best_action_index)
+            # print("Index of best action:",self.AI.best_action_index)
 
             if self.AI.best_action_index == 0:
                 self.AI.draw_card(whole_deck)
@@ -663,7 +687,7 @@ class GameFlow:
                 print(f"AI played Attack.")
             else: 
                 self.AI.list_options[self.AI.best_action_index] = 0
-                print("list after delete:",self.AI.list_options)
+                # print("list after delete:",self.AI.list_options)
             
     def turn(self):
         # subject 1 == player, subject 2 == AI
