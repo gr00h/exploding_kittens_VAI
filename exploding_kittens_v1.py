@@ -40,8 +40,8 @@ random.shuffle(whole_deck)
 Exploding_kitten_val = -20
 Defuse_val = 20
 nAC_val = 5
-Favor_val = 10
-Shuffle_val = 5
+Favor_val = 15
+Shuffle_val = 8
 Att_val = 12
 Sk_val = 10
 
@@ -106,6 +106,13 @@ class Actions:
             self.can_favor = True   
         else: 
             self.can_favor = False
+        
+        # implemenatation of using multiple nAC cards as Favor          TBD
+        # if ("nAC - Melon" and "nAC - Melon") in self.hand or ("nAC - Beard" and "nAC - Beard") in self.hand or ("nAC - Potato" and "nAC - Potato") in self.hand or ("nAC - Taco" and "nAC - Taco") in self.hand or ("nAC - Rainbow" and "nAC - Rainbow") in self.hand:
+        #     self.can_favor_nac = True   
+        # else: 
+        #     self.can_favor_nac = False
+
 
     # rewrite all possible actions based on hand
     def rewrite_possibilities(self):
@@ -231,16 +238,16 @@ class Actions:
         else:
             print("You cannot shuffle.")
 
-    # function representing playing a FAVOR card        FUNGUJE
+    # function representing playing a FAVOR             FUNGUJE
     def card_favor(self,subject2):
         if self.can_favor == True:
             card_position = random.randint(0,len(subject2.hand)-1)     # random integer in range 0 to length of enemy hand - 1
-            print(card_position)
+            # print(card_position)
             card = subject2.hand[card_position]
             self.hand.append(card)
             del subject2.hand[card_position]
 
-            # discarding Favor card
+            # discarding favor card
             played_card = self.hand.index("Favor")
             del self.hand[played_card]
             discard_pile.append("Favor")
@@ -250,6 +257,25 @@ class Actions:
         else:
             print("You cannot ask for a card.")
 
+    # function representing playing a 2X nAC - same as FAVOR        NEFUNGUJE YET
+    # def card_favor_nAC(self,subject2):
+    #     if self.can_favor_nac == True:
+    #         card_position = random.randint(0,len(subject2.hand)-1)     # random integer in range 0 to length of enemy hand - 1
+    #         # print(card_position)
+    #         card = subject2.hand[card_position]
+    #         self.hand.append(card)
+    #         del subject2.hand[card_position]
+
+    #         # discarding 2 nAC cards
+    #         played_card = self.hand.index(("nAC - Melon" and "nAC - Melon") or ("nAC - Beard" and "nAC - Beard") or ("nAC - Potato" and "nAC - Potato") or ("nAC - Taco" and "nAC - Taco") or ("nAC - Rainbow" and "nAC - Rainbow"))
+    #         del self.hand[played_card]
+    #         discard_pile.append("nAC x 2")
+
+    #         # rewrite possibilities with new card in hand 
+    #         self.rewrite_possibilities()
+    #     else:
+    #         print("You cannot ask for a card.")
+
     # check whether I can defend myself
     def can_counter_attack(self):
         self.rewrite_possibilities()
@@ -257,7 +283,7 @@ class Actions:
             self.I_can_counter_attack = True
         else:
             self.I_can_counter_attack = False
-
+        
     # calculate probability of enemy defending himself with countering attack card
     def enemy_can_counter_attack(self,subject2,deck):
         self.draw_probabilities(subject2,deck)
@@ -294,7 +320,7 @@ class Actions:
         self.deck_EK_check()
         # probability of drawing exploding kitten from deck
         self.draw_prob_EK = self.EK_in_deck/(len(deck))
-        print(len(deck))
+        # print(len(deck))
         # probability of drawing attack from deck
         att_in_hand = self.hand.count("Attack")
         # print("I have {} Attack".format(att_in_hand))
@@ -458,7 +484,8 @@ class Actions:
     # evaluate, whether its good to attack
     def eval_attack(self,subject2,deck):
         self.eval_draw(subject2,whole_deck)
-        if self.value_of_draw < 5 and self.can_attack == True:
+        # if self.value_of_draw < 5 and self.can_attack == True:
+        if self.draw_prob_EK > 0.25 and self.can_attack == True:
             self.enemy_can_counter_attack(subject2,deck)
             if self.enemy_intel.enemy_has_att_prob < 0.5:
                 self.should_I_attack = True
@@ -475,6 +502,7 @@ class Actions:
     # evaluate possibilities: draw, draw with favor, play attack, shuffle and draw, skip and enemy options
     def eval_options(self,subject2,deck):
         
+        # this gives end value of cards one can draw
         self.eval_draw(subject2,whole_deck)
         self.eval_draw_favor(subject2,whole_deck)
         self.eval_enemy(subject2,whole_deck)
@@ -483,7 +511,9 @@ class Actions:
         # these values are already calculated in functions called above
         # self.value_of_draw = self.expl_kitten_value + self.skip_value + self.shuffle_value + self.favor_value + self.nAC_value + self.attack_value
         # self.value_of_draw_w_Favor = self.expl_kitten_value_f + self.skip_value_f + self.shuffle_value_f + self.favor_value_f + self.nAC_value_f + self.attack_value_f + self.defuse_value
-        self.value_of_shuffle_draw = self.value_of_draw
+
+        # this will need to be reworked -> shuffle is usefull when you know what cards are in deck by means of See the Future, which is not yet implemented ---- therefore lets randomize shuffle a little bit to deviate from classic draw
+        self.value_of_shuffle_draw = self.value_of_draw + random.uniform(-1,1)
         
         # skip == enemy can play whatever they want
         self.value_of_skip = self.enemy_intel.value_of_enemy
@@ -538,7 +568,7 @@ class GameFlow:
         self.player.must_draw = True
         # show player his hand to let him choose a card to play
         self.player.reveal_hand()
-        self.player.wanna_play = input("\nDo you want to play a card? [y/n]: ")
+        self.player.wanna_play = input("Do you want to play a card? [y/n]: ")
 
         if self.player.wanna_play == "y":
 
@@ -576,7 +606,14 @@ class GameFlow:
                         self.card_was_played = True
                     else:
                         self.player.desired_card=input("Please select another card: ")
-
+                
+                # elif self.player.desired_card == "nAC":
+                #     if self.player.can_favor_nac == True:
+                #         self.player.card_favor_nAC(self.AI)
+                #         self.card_was_played = True
+                #     else:
+                #         self.player.desired_card=input("Pls select another card: ")
+                
                 elif self.player.desired_card == "Back":
                     break
 
@@ -601,32 +638,38 @@ class GameFlow:
             # self.AI.best_action = max(self.AI.list_options)
             # print(self.AI.best_action)
             self.AI.best_action_index = self.AI.list_options.index(max(self.AI.list_options))
-            print(self.AI.best_action_index)
+            print("Index of best action:",self.AI.best_action_index)
 
             if self.AI.best_action_index == 0:
                 self.AI.draw_card(whole_deck)
                 self.AI.must_draw = False
                 self.AI.did_something = True
+                print(f"AI draw's a card.")
             elif self.AI.best_action_index == 1 and self.AI.can_favor == True:
                 self.AI.card_favor(self.player)
                 self.AI.did_something = True
+                print(f"AI played Favor.")
             elif self.AI.best_action_index == 2 and self.AI.can_shuffle == True:
                 self.AI.card_shuffle(whole_deck)
                 self.AI.did_something = True
+                print(f"AI played Shuffle.")
             elif self.AI.best_action_index == 3 and self.AI.can_skip == True:
                 self.AI.card_skip()
                 self.AI.did_something = True
+                print(f"AI played Skip.")
             elif self.AI.best_action_index == 4 and self.AI.can_attack == True:
                 self.AI.card_attack(self.player,whole_deck)
                 self.AI.did_something = True
+                print(f"AI played Attack.")
             else: 
                 self.AI.list_options[self.AI.best_action_index] = 0
                 print("list after delete:",self.AI.list_options)
-
+            
     def turn(self):
         # subject 1 == player, subject 2 == AI
         self.round = self.round + 1
-        print(f"Round: {self.round}")
+        print(f"\nRound: {self.round}")
+        print(f"Amount of cards in deck: ",len(whole_deck))
         print(f"It's {self.current_player.subject}'s turn")
 
         # tady odpalit funcki hrani hrace anebo AI
